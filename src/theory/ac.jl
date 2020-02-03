@@ -7,18 +7,17 @@ using DataStructures
 struct ACTheory <: AbstractTheory end
 
 
-struct ACTerm <: AbstractTerm
+struct ACTerm{D<:AbstractDict} <: AbstractTerm
     root
     domain
-    args::OrderedDict{Union{Variable,AbstractTerm},UInt}
-    ACTerm(root, domain, args) = new(root, domain, sort(args, lt=(>ₜ), rev=true))
+    args::D
 end
 
 function term(::ACTheory, root, args; domain=promote_domain(root, args...))
     @assert !isempty(args)
     length(args) == 1 && return first(args)
 
-    dict = OrderedDict{Union{Variable,AbstractTerm},UInt}()
+    dict = Dict{Any, UInt}()
     for arg ∈ args
         if isa(arg, ACTerm) && arg.root == root #&& arg.domain == arg.domain
             # Flatten and add multiplicity if arguments repeat
@@ -42,8 +41,8 @@ function Base.convert(::Type{Expr}, t::ACTerm)
     ex
 end
 
-theory(::Type{ACTerm}) = ACTheory()
-priority(::Type{ACTerm}) = 20
+theory(::Type{<:ACTerm}) = ACTheory()
+priority(::Type{<:ACTerm}) = 20
 
 vars(t::ACTerm) = mapreduce(vars, ∪, keys(t.args); init=Set{Variable}())
 
@@ -64,7 +63,7 @@ end
 Base.hash(t::ACTerm, h::UInt) = hash(t.args, hash(t.domain, hash(t.root, hash(ACTerm, h))))
 
 function Base.map(f, p::ACTerm; domain=p.domain)
-    dict = OrderedDict{Union{Variable,AbstractTerm},UInt}()
+    dict = Dict{Any, UInt}()
 
     for (t, k) ∈ p.args
         t′ = f(t)
@@ -238,7 +237,7 @@ struct ACRewriter <: AbstractRewriter
 end
 
 rewriter(::ACTheory) = ACRewriter(Dict{Σ,Vector{Pair{ACMatcherSC,Any}}}())
-function Base.push!(rw::ACRewriter, (p, b)::Pair{ACTerm})
+function Base.push!(rw::ACRewriter, (p, b)::Pair{<:ACTerm})
     haskey(rw.rules, p.root) || (rw.rules[p.root] = Pair{ACMatcherSC,Any}[])
     push!(rw.rules[p.root], matcher(p) => b)
     rw

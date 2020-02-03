@@ -2,26 +2,33 @@ export FreeTheory
 
 
 using Combinatorics
+using FunctionalCollections
 
 
 struct FreeTheory <: AbstractTheory end
 
 
-struct FreeTerm <: AbstractTerm
-    root::Σ
-    args::Vector{Union{Variable,AbstractTerm}}
+struct FreeTerm{V} <: AbstractTerm
+    root
+    domain
+    args::V
 end
 
-term(::FreeTheory, root, args) = FreeTerm(root, args)
+function term(::FreeTheory, root, args; domain=nothing)
+    d = domain === nothing ? promote_domain(root, args...) : domain
+    FreeTerm(root, d, args)
+end
 Base.convert(::Type{Expr}, t::FreeTerm) = Expr(:call, t.root, convert.(Expr, t.args)...)
 
-theory(::Type{FreeTerm}) = FreeTheory()
-priority(::Type{FreeTerm}) = 1000
+theory(::Type{<:FreeTerm}) = FreeTheory()
+priority(::Type{<:FreeTerm}) = 1000
 
 vars(t::FreeTerm) = mapreduce(vars, ∪, t.args; init=Set{Variable}())
 
 function Base.:(==)(a::FreeTerm, b::FreeTerm)
-    a.root == b.root || return false
+    if a.root !== b.root || length(a.args) !== length(b.args)
+        return false
+    end
 
     for i ∈ eachindex(a.args)
         a.args[i] == b.args[i] || return false
@@ -31,7 +38,7 @@ function Base.:(==)(a::FreeTerm, b::FreeTerm)
 end
 
 function (a::FreeTerm >ₜ b::FreeTerm)
-    a.root == b.root || return a.root >ₑ b.root
+    a.root === b.root || return a.root >ₑ b.root
     @assert length(a.args) == length(b.args)
 
     for (x, y) ∈ zip(a.args, b.args)
@@ -46,7 +53,9 @@ function Base.hash(t::FreeTerm, h::UInt)
     foldr(hash, t.args; init=init)
 end
 
-Base.map(f, t::FreeTerm) = FreeTerm(t.root, map(f, t.args))
+function Base.map(f, t::FreeTerm; domain=nothing)
+    term(FreeTheory(), t.root, map(f, t.args), domain=domain)
+end
 
 
 @enum FreeKind VAR NODE ALIEN
@@ -254,7 +263,7 @@ struct FreeRewriter <: AbstractRewriter
 end
 
 rewriter(::FreeTheory) = FreeRewriter(Dict{Σ,Vector{Pair{FreeMatcher,Any}}}())
-function Base.push!(rw::FreeRewriter, (p, b)::Pair{FreeTerm})
+function Base.push!(rw::FreeRewriter, (p, b)::Pair{<:FreeTerm})
     haskey(rw.rules, p.root) || (rw.rules[p.root] = Pair{FreeMatcher,Any}[])
     push!(rw.rules[p.root], matcher(p) => b)
     rw

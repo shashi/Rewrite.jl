@@ -4,7 +4,8 @@ export match
 
 
 const Σ = Symbol
->ₑ(a::Σ, b::Σ) = a > b
+>ₑ(a, b) = a > b
+>ₑ(a::Function, b::Function) = a.uid > b.uid
 
 
 abstract type AbstractTheory end

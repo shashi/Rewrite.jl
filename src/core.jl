@@ -14,6 +14,7 @@ abstract type AbstractSubproblem end
 abstract type AbstractRewriter end
 
 
+include("domain.jl")
 include("variable.jl")
 include("match.jl")
 include("rewriter.jl")

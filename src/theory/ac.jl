@@ -8,24 +8,26 @@ struct ACTheory <: AbstractTheory end
 
 
 struct ACTerm <: AbstractTerm
-    root::Σ
+    root
+    domain
     args::OrderedDict{Union{Variable,AbstractTerm},UInt}
-    ACTerm(root, args) = new(root, sort(args, lt=(>ₜ), rev=true))
+    ACTerm(root, domain, args) = new(root, domain, sort(args, lt=(>ₜ), rev=true))
 end
 
-function term(::ACTheory, root, args)
+function term(::ACTheory, root, args; domain=promote_domain(root, args...))
     @assert !isempty(args)
     length(args) == 1 && return first(args)
 
     dict = OrderedDict{Union{Variable,AbstractTerm},UInt}()
     for arg ∈ args
-        if isa(arg, ACTerm) && arg.root == root
+        if isa(arg, ACTerm) && arg.root == root #&& arg.domain == arg.domain
+            # Flatten and add multiplicity if arguments repeat
             merge!(+, dict, arg.args)
         else
             dict[arg] = get(dict, arg, 0) + 1
         end
     end
-    return ACTerm(root, dict)
+    return ACTerm(root, domain, dict)
 end
 
 _lt_pair_term(a, b) = b.first >ₜ a.first
@@ -45,7 +47,7 @@ priority(::Type{ACTerm}) = 20
 
 vars(t::ACTerm) = mapreduce(vars, ∪, keys(t.args); init=Set{Variable}())
 
-Base.:(==)(a::ACTerm, b::ACTerm) = a.root == b.root && a.args == b.args
+Base.:(==)(a::ACTerm, b::ACTerm) = a.root === b.root && a.args == b.args
 
 function (a::ACTerm >ₜ b::ACTerm)
     a.root == b.root || return a.root >ₑ b.root
@@ -59,14 +61,14 @@ function (a::ACTerm >ₜ b::ACTerm)
     return false
 end
 
-Base.hash(t::ACTerm, h::UInt) = hash(t.args, hash(t.root, hash(ACTerm, h)))
+Base.hash(t::ACTerm, h::UInt) = hash(t.args, hash(t.domain, hash(t.root, hash(ACTerm, h))))
 
-function Base.map(f, p::ACTerm)
+function Base.map(f, p::ACTerm; domain=p.domain)
     dict = OrderedDict{Union{Variable,AbstractTerm},UInt}()
 
     for (t, k) ∈ p.args
         t′ = f(t)
-        if isa(t′, ACTerm) && t′.root == p.root
+        if isa(t′, ACTerm) && t′.root === p.root
             for (u, i) ∈ t′.args
                 dict[u] = get(dict, u, 0) + i*k
             end
@@ -75,7 +77,7 @@ function Base.map(f, p::ACTerm)
         end
     end
 
-    return ACTerm(p.root, dict)
+    return ACTerm(p.root, domain, dict)
 end
 
 

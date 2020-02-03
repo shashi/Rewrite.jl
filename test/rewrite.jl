@@ -10,6 +10,7 @@ end
     end
     @test Demo(f(a)) == g(a)
     @test Demo(h(f(a))) == h(g(a))
+    @test Demo(f(h(a))) == g(h(a))
     @test Demo(g(a)) == g(a)
     @test Demo(h(a)) == h(a)
 end
@@ -19,11 +20,14 @@ end
         @rules Demo [x, y] begin
             f(x)       := g(x)
             h(x, x, y) := p(x, y)
+            #s(x, x, y) := p(x, y) # TODO
         end
 
         @test Demo(f(a)) == g(a)
         @test Demo(h(a, a, b)) == p(a, b)
         @test Demo(h(a, b, b)) == h(a, b, b)
+        # TODO: for ACTheory
+        #@test Demo(s(a, b, b)) == p(a, b)
     end
 
     @testset "overlapping" begin

@@ -1,7 +1,9 @@
 export ACTheory
 
 using Combinatorics
-using DataStructures
+using FunctionalCollections
+
+const pdict = PersistentHashMap
 
 
 struct ACTheory <: AbstractTheory end
@@ -13,17 +15,42 @@ struct ACTerm{D<:AbstractDict} <: AbstractTerm
     args::D
 end
 
+function _merge(f, d, others...)
+    acc = d
+    for other in others
+        for (k, v) in other
+            if haskey(acc, k)
+                acc = assoc(acc, k, f(acc[k], v))
+            else
+                acc = assoc(acc, k, v)
+            end
+        end
+    end
+    acc
+end
+
 function term(::ACTheory, root, args; domain=promote_domain(root, args...))
     @assert !isempty(args)
     length(args) == 1 && return first(args)
 
-    dict = Dict{Any, UInt}()
-    for arg ∈ args
+    if args[1] isa ACTerm && args[1].root === root
+        # TODO: pick the biggest arg so that the biggest
+        # pdict is reused.
+        dict = args[1].args
+        rest = args[2:end]
+    else
+        dict = pdict{Any, UInt}()
+        rest = args
+    end
+
+    for arg ∈ rest
         if isa(arg, ACTerm) && arg.root == root #&& arg.domain == arg.domain
             # Flatten and add multiplicity if arguments repeat
-            merge!(+, dict, arg.args)
+            dict = _merge(+, dict, arg.args)
         else
-            dict[arg] = get(dict, arg, 0) + 1
+            # Do not flatten, leave term as it is
+            # TODO: optimize
+            dict = assoc(dict, arg, get(dict, arg, 0) + 1)
         end
     end
     return ACTerm(root, domain, dict)
@@ -63,16 +90,16 @@ end
 Base.hash(t::ACTerm, h::UInt) = hash(t.args, hash(t.domain, hash(t.root, hash(ACTerm, h))))
 
 function Base.map(f, p::ACTerm; domain=p.domain)
-    dict = Dict{Any, UInt}()
+    dict = pdict{Any, UInt}()
 
     for (t, k) ∈ p.args
         t′ = f(t)
         if isa(t′, ACTerm) && t′.root === p.root
             for (u, i) ∈ t′.args
-                dict[u] = get(dict, u, 0) + i*k
+                dict = assoc(dict, u, get(dict, u, 0) + i*k)
             end
         else
-            dict[t′] = get(dict, t′, 0) + k
+            dict = assoc(dict, t′, get(dict, t′, 0) + k)
         end
     end
 

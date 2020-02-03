@@ -15,15 +15,16 @@ struct ACTerm{D<:AbstractDict} <: AbstractTerm
     args::D
 end
 
-function _merge(f, d, others...)
-    acc = d
-    for other in others
-        for (k, v) in other
-            if haskey(acc, k)
-                acc = assoc(acc, k, f(acc[k], v))
-            else
-                acc = assoc(acc, k, v)
-            end
+function _merge(f, d1, d2)
+    # Do the least amount of lookups
+    length(d1) < length(d2) && return _merge((y,x)->f(x,y), d2,d1)
+
+    acc = d1
+    for (k, v) in d2
+        if haskey(acc, k)
+            acc = assoc(acc, k, f(acc[k], v))
+        else
+            acc = assoc(acc, k, v)
         end
     end
     acc
@@ -34,8 +35,6 @@ function term(::ACTheory, root, args; domain=promote_domain(root, args...))
     length(args) == 1 && return first(args)
 
     if args[1] isa ACTerm && args[1].root === root
-        # TODO: pick the biggest arg so that the biggest
-        # pdict is reused.
         dict = args[1].args
         rest = args[2:end]
     else

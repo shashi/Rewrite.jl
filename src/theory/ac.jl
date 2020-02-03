@@ -61,7 +61,11 @@ function Base.convert(::Type{Expr}, t::ACTerm)
     ex = Expr(:call, t.root)
 
     for (s, k) ∈ targs
-        append!(ex.args, fill(convert(Expr, s), k))
+        if s isa Union{AbstractTerm, Variable}
+            append!(ex.args, fill(convert(Expr, s), k))
+        else
+            append!(ex.args, fill(s, k))
+        end
     end
 
     ex

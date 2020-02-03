@@ -21,10 +21,8 @@ function _to_theory(th, expr; strict=false)
     elseif isa(expr, Expr)
         expr.head === :call || throw(ArgumentError("invalid non-call Expr"))
         (expr.args[1], expr.args[2:end])
-    elseif isa(expr, Union{Variable,AbstractTerm})
-        return expr
     else
-        throw(ArgumentError("invalid expression: $(repr(expr))"))
+        return expr
     end
 
     root_theory = haskey(th, root) ? th[root] :

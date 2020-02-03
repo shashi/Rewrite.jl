@@ -41,6 +41,9 @@ Total ordering on terms.
 """
 function >ₜ end
 >ₜ(s::AbstractTerm, t::AbstractTerm) = priority(s) > priority(t)
+>ₜ(s::AbstractTerm, t::Any) = true
+>ₜ(s::Any, t::Any) = s > t
+>ₜ(t::Any, s::AbstractTerm) = false
 
 
 """

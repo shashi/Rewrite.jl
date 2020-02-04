@@ -20,13 +20,13 @@ function term(::FreeTheory, root, args; domain=nothing)
 end
 function Base.convert(::Type{Expr}, t::FreeTerm)
     Expr(:call, t.root,
-         map(x->x isa Union{AbstractTerm, Variable} ? convert(Expr,x) : x, t.args)...)
+         map(x->x isa Union{AbstractTerm, Slot} ? convert(Expr,x) : x, t.args)...)
 end
 
 theory(::Type{<:FreeTerm}) = FreeTheory()
 priority(::Type{<:FreeTerm}) = 1000
 
-vars(t::FreeTerm) = mapreduce(vars, ∪, t.args; init=Set{Variable}())
+vars(t::FreeTerm) = mapreduce(vars, ∪, t.args; init=Set{Slot}())
 
 function Base.:(==)(a::FreeTerm, b::FreeTerm)
     if a.root !== b.root || length(a.args) !== length(b.args)
@@ -70,7 +70,7 @@ end
 struct FreeMatcher <: AbstractMatcher
     m::FreeAux
     syms::Vector{Σ}
-    vars::Vector{Variable}
+    vars::Vector{Slot}
     matchers::Vector{AbstractMatcher}
     ϕ::Vector{Int}
 end
@@ -82,7 +82,7 @@ function _build_free_context!(t::FreeTerm, syms, vars, aliens)
 
     for i ∈ eachindex(t.args)
         arg = t.args[i]
-        if isa(arg, Variable)
+        if isa(arg, Slot)
             idx = findfirst(==(arg), vars)
             idx === nothing && (push!(vars, arg); idx = length(vars))
             args[i] = FreeAux(VAR, idx, [])
@@ -114,7 +114,7 @@ end
 
 function matcher(t::FreeTerm, V)
     syms = Σ[]
-    vars = Variable[]
+    vars = Slot[]
     aliens = AbstractTerm[]
     m = _build_free_context!(t, syms, vars, aliens)
 

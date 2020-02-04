@@ -15,17 +15,19 @@ using Test
     t => ACTheory()
 end
 
-a = @term(a)
-b = @term(b)
-c = @term(c)
-f(xs...) = @term(f($(xs...)))
-g(xs...) = @term(g($(xs...)))
-h(xs...) = @term(h($(xs...)))
-p(x, y) = @term(p($x, $y))
-q(x, y) = @term(q($x, $y))
-s(xs...) = @term(s($(xs...)))
-t(xs...) = @term(t($(xs...)))
-x, y, z = Variable(), Variable(), Variable()
+using Rewrite: term
+
+a = term(FreeTheory(), :a, [])
+b = term(FreeTheory(), :b, [])
+c = term(FreeTheory(), :c, [])
+f(xs...) = @term(f(xs...))
+g(xs...) = @term(g(xs...))
+h(xs...) = @term(h(xs...))
+p(x, y) = @term(p(x, y))
+q(x, y) = @term(q(x, y))
+s(xs...) = @term(s(xs...))
+t(xs...) = @term(t(xs...))
+x, y, z = Slot(), Slot(), Slot()
 
 
 @testset "construction" begin

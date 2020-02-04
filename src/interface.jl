@@ -15,11 +15,11 @@ function theory end
 theory(t::T) where {T<:AbstractTerm} = theory(T)
 
 """
-    vars(t::AbstractTerm) -> Set{Variable}
+    slots(t::AbstractTerm) -> Set{Slot}
 
 Produce the set of variables which appear as subterms of `t`.
 """
-function vars end
+function slots end
 
 """
     priority(::Type{<:AbstractTerm}) -> Int
@@ -47,7 +47,7 @@ function >ₜ end
 
 
 """
-    matcher(t::AbstractTerm, V::Set{Variable}) -> Tuple{AbstractMatcher,Set{Variable}}
+    matcher(t::AbstractTerm, V::Set{Slot}) -> Tuple{AbstractMatcher,Set{Slot}}
 
 Generate a matcher for `t`, given that variables `V` will already be matched. Produce a set
 of variables which are guaranteed to be fixed during matching.
@@ -74,7 +74,7 @@ match!(::Any, ::AbstractMatcher, ::AbstractTerm) = nothing
 Compile `pattern` to a native `Expr` containing a function for matching against `pattern`,
 given that the variables in `V` are fixed.
 """
-compile(pattern::AbstractMatcher) = compile(pattern, Set{Variable}())
+compile(pattern::AbstractMatcher) = compile(pattern, Set{Slot}())
 
 
 """

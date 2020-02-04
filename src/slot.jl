@@ -1,16 +1,16 @@
-export Variable
+export Slot
 
 
-mutable struct Variable end
+mutable struct Slot end
 
-Base.show(io::IO, x::Variable) = print(io, "Variable(#=", objectid(x), "=#)")
+Base.show(io::IO, x::Slot) = print(io, "Slot(#=", objectid(x), "=#)")
 
 
-Base.convert(::Type{Expr}, x::Variable) = x
+Base.convert(::Type{Expr}, x::Slot) = x
 
-vars(x::Variable) = Set([x])
-matcher(x::Variable, V) = (x, push!(copy(V), x))
-@inline function match!(σ, x::Variable, t::AbstractTerm)
+vars(x::Slot) = Set([x])
+matcher(x::Slot, V) = (x, push!(copy(V), x))
+@inline function match!(σ, x::Slot, t::AbstractTerm)
     if haskey(σ, x)
         σ[x] == t || return nothing
     else
@@ -18,13 +18,13 @@ matcher(x::Variable, V) = (x, push!(copy(V), x))
     end
     return EmptySubproblem()
 end
-replace(x::Variable, σ) = σ[x]
+replace(x::Slot, σ) = σ[x]
 
->ₜ(::Variable, ::AbstractTerm) = false
->ₜ(::AbstractTerm, ::Variable) = true
->ₜ(x::Variable, y::Variable) = objectid(x) > objectid(y)
+>ₜ(::Slot, ::AbstractTerm) = false
+>ₜ(::AbstractTerm, ::Slot) = true
+>ₜ(x::Slot, y::Slot) = objectid(x) > objectid(y)
 
-function compile(x::Variable, V)
+function compile(x::Slot, V)
     fn_name = gensym(:match!_var)
     empty = EmptySubproblem()
     body = if x ∈ V

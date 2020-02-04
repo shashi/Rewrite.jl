@@ -61,7 +61,7 @@ function Base.convert(::Type{Expr}, t::ACTerm)
     ex = Expr(:call, t.root)
 
     for (s, k) ∈ targs
-        if s isa Union{AbstractTerm, Variable}
+        if s isa Union{AbstractTerm, Slot}
             append!(ex.args, fill(convert(Expr, s), k))
         else
             append!(ex.args, fill(s, k))
@@ -74,7 +74,7 @@ end
 theory(::Type{<:ACTerm}) = ACTheory()
 priority(::Type{<:ACTerm}) = 20
 
-vars(t::ACTerm) = mapreduce(vars, ∪, keys(t.args); init=Set{Variable}())
+vars(t::ACTerm) = mapreduce(vars, ∪, keys(t.args); init=Set{Slot}())
 
 Base.:(==)(a::ACTerm, b::ACTerm) = a.root === b.root && a.args == b.args
 
@@ -114,13 +114,13 @@ struct ACMatcherSC <: AbstractMatcher
     root::Σ
     ground_subterms::Dict{AbstractTerm,UInt}
     alien_subterms::Vector{AbstractMatcher}
-    linear_variables::Vector{Variable}
+    linear_variables::Vector{Slot}
 end
 
 function matcher(t::ACTerm, V)
     ground_subterms = Dict{AbstractTerm,UInt}()
     alien_subterms = AbstractMatcher[]
-    linear_variables = Variable[]
+    linear_variables = Slot[]
 
     V′ = copy(V)
 
@@ -137,7 +137,7 @@ function matcher(t::ACTerm, V)
             s_matcher, sV = matcher(s, V)
             push!(alien_subterms, s_matcher)
             union!(V′, sV)
-        elseif isa(s, Variable) && k == 1 && s ∉ V
+        elseif isa(s, Slot) && k == 1 && s ∉ V
             push!(linear_variables, s)
         else
             error("AC pattern not yet supported: $t")

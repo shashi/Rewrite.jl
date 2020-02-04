@@ -6,8 +6,8 @@ struct CTheory <: AbstractTheory end
 
 struct CTerm <: AbstractTerm
     root::Σ
-    α::Union{Variable,AbstractTerm}
-    β::Union{Variable,AbstractTerm}
+    α::Union{Slot,AbstractTerm}
+    β::Union{Slot,AbstractTerm}
     CTerm(root, s, t) = s >ₜ t ? new(root, t, s) : new(root, s, t)
 end
 
@@ -36,12 +36,12 @@ Base.map(f, t::CTerm) = CTerm(t.root, f(t.α), f(t.β))
 
 struct CMatcher <: AbstractMatcher
     root::Σ
-    s::Union{Variable,AbstractMatcher}
-    t::Union{Variable,AbstractMatcher}
+    s::Union{Slot,AbstractMatcher}
+    t::Union{Slot,AbstractMatcher}
 end
 
 function matcher(t::CTerm, V)
-    if isa(t.α, Variable) | isa(t.β, Variable) || theory(t.α) === theory(t.β)
+    if isa(t.α, Slot) | isa(t.β, Slot) || theory(t.α) === theory(t.β)
         (cα, _) = matcher(t.α, V)
         (cβ, _) = matcher(t.β, V)
         return CMatcher(t.root, cα, cβ), V

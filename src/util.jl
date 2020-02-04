@@ -1,12 +1,12 @@
 substitute(σ) = Base.Fix2(replace, σ)
 replace(t::AbstractTerm, σ) = map(substitute(σ), t)
-replace(t::Union{Variable,AbstractTerm}) = Base.Fix1(replace, t)
+replace(t::Union{Slot,AbstractTerm}) = Base.Fix1(replace, t)
 
 
 function many_matchers(ps::Vector, V)
-    matchers = similar(ps, Union{AbstractMatcher,Variable})
+    matchers = similar(ps, Union{AbstractMatcher,Slot})
     for (i, p) ∈ enumerate(ps)
-        matchers[i], V::Set{Variable} = matcher(p, V)
+        matchers[i], V::Set{Slot} = matcher(p, V)
     end
     return matchers, V
 end

@@ -3,10 +3,10 @@
 
 Build the matcher for `t`.
 """
-matcher(t) = matcher(t, Set{Variable}())[1]
+matcher(t) = matcher(t, Set{Slot}())[1]
 
 
-const Substitution = Dict{Variable,AbstractTerm}
+const Substitution = Dict{Slot,AbstractTerm}
 
 struct Matches{S<:AbstractSubproblem}
     p::Substitution

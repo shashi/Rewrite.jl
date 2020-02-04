@@ -42,7 +42,7 @@ function _to_term(expr; strict=false, define_vars=false)
 end
 
 
-function Base.show(io::IO, t::Union{Variable, AbstractTerm})
+function Base.show(io::IO, t::Union{Slot, AbstractTerm})
     term_expr = convert(Expr, t)
     Base.show_call(io, :call, Symbol("@term"), [term_expr], 0)
 end
@@ -74,7 +74,7 @@ macro rules(name, varnames, body)
     @assert isa(body, Expr) && body.head === :block
     Base.remove_linenums!(body)
 
-    vars = Dict(x => Variable() for x ∈ varnames.args)
+    vars = Dict(x => Slot() for x ∈ varnames.args)
 
     rw = Rewriter()
     for i ∈ eachindex(body.args)

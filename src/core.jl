@@ -16,6 +16,6 @@ abstract type AbstractRewriter end
 
 
 include("domain.jl")
-include("variable.jl")
+include("slot.jl")
 include("match.jl")
 include("rewriter.jl")

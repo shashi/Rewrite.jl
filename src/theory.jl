@@ -15,24 +15,30 @@ macro theory!(theories)
     nothing
 end
 
-function _to_theory(th, expr; strict=false)
-    (root, args) = if isa(expr, Symbol)
-        (expr, [])
-    elseif isa(expr, Expr)
-        expr.head === :call || throw(ArgumentError("invalid non-call Expr"))
-        (expr.args[1], expr.args[2:end])
+function _theory_op(f, args...)
+    theory_op(f, map(domain, args)...)
+end
+
+function _promote_domain(f, args...)
+    promote_domain(f, map(domain, args)...)
+end
+
+function _to_term(expr; strict=false, define_vars=false)
+    if expr isa Expr && expr.head === :call
+        args  = copy(expr.args[2:end])
+
+        for i ∈ eachindex(args)
+            args[i] = _to_term(args[i]; strict=strict, define_vars=define_vars)
+        end
+
+        eargs = map(esc, args)
+        th    = :(_theory_op($(eargs...)))
+        dmn   = :(_promote_domain($(eargs...)))
+
+        :(term($th, $(esc(expr.args[1])), [$(args...)]; domain=$dmn))
     else
         return expr
     end
-
-    root_theory = haskey(th, root) ? th[root] :
-        strict ? throw(ArgumentError("$root undefined in theory")) : FreeTheory()
-
-    for i ∈ eachindex(args)
-        args[i] = _to_theory(th, args[i]; strict=strict)
-    end
-
-    term(root_theory, root, args)
 end
 
 
@@ -42,7 +48,7 @@ function Base.show(io::IO, t::Union{Variable, AbstractTerm})
 end
 
 macro term(expr)
-    :(_to_theory(THEORY, $(Meta.quot(expr))))
+    _to_term(expr; define_vars=true)
 end
 
 
@@ -89,5 +95,6 @@ end
 
 
 macro rewrite(rw, expr)
-    :($(esc(rw))(_to_theory(THEORY, $(Meta.quot(expr)))))
+    term = _to_term(expr)
+    :($(esc(rw))($term))
 end

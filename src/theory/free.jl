@@ -18,7 +18,10 @@ function term(::FreeTheory, root, args; domain=nothing)
     d = domain === nothing ? promote_domain(root, args...) : domain
     FreeTerm(root, d, args)
 end
-Base.convert(::Type{Expr}, t::FreeTerm) = Expr(:call, t.root, convert.(Expr, t.args)...)
+function Base.convert(::Type{Expr}, t::FreeTerm)
+    Expr(:call, t.root,
+         map(x->x isa Union{AbstractTerm, Variable} ? convert(Expr,x) : x, t.args)...)
+end
 
 theory(::Type{<:FreeTerm}) = FreeTheory()
 priority(::Type{<:FreeTerm}) = 1000

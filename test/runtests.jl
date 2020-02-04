@@ -17,9 +17,8 @@ end
 
 using Rewrite: term
 
-a = term(FreeTheory(), :a, [])
-b = term(FreeTheory(), :b, [])
-c = term(FreeTheory(), :c, [])
+@vars a b c
+
 f(xs...) = @term(f(xs...))
 g(xs...) = @term(g(xs...))
 h(xs...) = @term(h(xs...))

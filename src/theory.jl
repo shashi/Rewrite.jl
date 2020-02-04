@@ -28,23 +28,25 @@ function _to_term(expr; strict=false, define_vars=false)
         args  = copy(expr.args[2:end])
 
         for i ∈ eachindex(args)
-            args[i] = _to_term(args[i]; strict=strict, define_vars=define_vars)
+            if args[i] isa Expr && args[i].head === :call
+                args[i] = _to_term(args[i]; strict=strict, define_vars=define_vars)
+            end
         end
 
         eargs = map(esc, args)
         th    = :(_theory_op($(eargs...)))
         dmn   = :(_promote_domain($(eargs...)))
 
-        :(term($th, $(esc(expr.args[1])), [$(args...)]; domain=$dmn))
+        :(term($th, $(esc(expr.args[1])), [$(eargs...)]; domain=$dmn))
     else
-        return expr
+        return esc(expr)
     end
 end
 
 
 function Base.show(io::IO, t::Union{Slot, AbstractTerm})
     term_expr = convert(Expr, t)
-    Base.show_call(io, :call, Symbol("@term"), [term_expr], 0)
+    Base.print(io, term_expr, "::", domain(t))
 end
 
 macro term(expr)
@@ -63,8 +65,7 @@ function _rules_replace!(ex, vars)
     return ex
 end
 function _clean(ex, vars)
-    ex′ = _rules_replace!(ex, vars)
-    _to_theory(THEORY, ex′; strict=true)
+    _rules_replace!(ex, vars)
 end
 macro rules(name, varnames, body)
     @assert isa(name, Symbol)
